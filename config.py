@@ -10,3 +10,4 @@ class Config(object):
   SQLALCHEMY_DATABASE_URI=os.environ.get('DATABASE_URL')
   SECRET_KEY='supersecret'
   FLASK_ADMIN_SWATCH = 'cerulean'
+  SQLALCHEMY_TRACK_MODIFICATIONS = False
