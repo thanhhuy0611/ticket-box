@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="container">
-    <form method="POST" action="{{url_for('post.edit_post',id = post.id)}}">
+    <form method="POST" action="{{url_for('user.edit_post',id = post.id)}}">
         <label for="basic-url">What do you want to share?</label>
         <div class="input-group mb-3">
             <div class="input-group-prepend">

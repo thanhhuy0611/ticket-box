@@ -31,7 +31,7 @@ def load_user(id):
 #-------------------------------------------------------
 ## import controlers file
 from src.components.user import user_blueprint
-app.register_blueprint(user_blueprint, url_prefix='/post')
+app.register_blueprint(user_blueprint, url_prefix='/user')
 
 # set current_user
 @login_manager.user_loader
@@ -74,7 +74,9 @@ def sign_up():
                 db.session.commit()
                 login_user(new_user)
                 return redirect(url_for('home'))
-        print(form.errors.items())
+        else:
+            for field,error in form.errors.items():
+                flash(f'{field}: {error[0]}','danger')
     return render_template('/signup.html', form = form)
 
 
@@ -129,3 +131,4 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('login'))
+

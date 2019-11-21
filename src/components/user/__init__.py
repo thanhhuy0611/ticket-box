@@ -4,11 +4,41 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from flask_wtf import FlaskForm
 from flask_migrate import Migrate
 from wtforms import StringField, validators, PasswordField, SubmitField
+from itsdangerous import URLSafeTimedSerializer
+import requests
+from requests.exceptions import HTTPError
 
 
-user_blueprint = Blueprint('post', __name__, template_folder='../../templates')
 
-## My awesome forms
+##import model
+from src.models.user import Users, Blog, Comment
+from src import app
+
+##import database
+from src import db
+
+## define blue print (class = (url_prefix, route to view))
+user_blueprint = Blueprint('user', __name__, template_folder='../../templates')
+
+
+## Create form validation class
+class EmailForm(FlaskForm):
+    email = StringField(
+        'Email', validators=[
+            validators.DataRequired(), 
+            validators.Email("Please enter correct email!")
+            ])
+    submit = SubmitField('Send')
+
+class PasswordForm(FlaskForm):
+    password = PasswordField(
+        'New password', validators=[
+            validators.DataRequired(),
+            validators.EqualTo('confirm', message='Passwords must match')
+    ])
+    confirm = PasswordField('Confirm password', validators=[validators.DataRequired()])
+    submit = SubmitField('Change password')
+
 class RegisterForm(FlaskForm):
     username = StringField(
         "User name", validators=[
@@ -29,10 +59,6 @@ class RegisterForm(FlaskForm):
     confirm = PasswordField('Confirm password', validators=[validators.DataRequired()])
     submit = SubmitField('Sign up')
 
-
-from src.models.user import Users, Blog, Comment
-from src import db
-
 # comment
 @user_blueprint.route('/<id>/comments', methods=['GET','POST'])
 def create_comment(id):
@@ -50,6 +76,7 @@ def create_comment(id):
 
 # delete comment
 @user_blueprint.route('/<id>/comments/<id_comment>', methods=['GET','POST'])
+@login_required
 def delete_comment(id,id_comment):
     ref = request.args.get('ref')
     print('ref',ref)
@@ -66,18 +93,78 @@ def view_post(id):
     post.view_count +=1
     db.session.commit() 
     post.comments = Comment.query.filter_by(blog_id = id).all()
-    return render_template('/post.html',post = post, ref = 'post.view_post')
+    return render_template('/post.html',post = post, ref = 'user.view_post')
 
 #Edit a blog
 @user_blueprint.route('/<id>/edit',methods=['GET','POST'])
+@login_required
 def edit_post(id):
     post = Blog.query.get(id)
     if request.method == "POST":
         post.title = request.form['title']
         post.body = request.form['body']
         db.session.commit()
-        return redirect(url_for('post.view_post',id = id))
+        return redirect(url_for('user.view_post',id = id))
     return render_template('/editpost.html',post = post)
 
+## reset password
+@user_blueprint.route('/reset',methods=["GET","POST"])
+def reset():
+    form = EmailForm()
+    if form.validate_on_submit():
+        user = Users.query.filter_by(email = form.email.data).first()
+        print('username',user.user_name)
+        ##config token
+        ts = URLSafeTimedSerializer(app.config["SECRET_KEY"])
+        token = ts.dumps(user.email, salt='recover-password-secret')
+        print('token',token)
+        send_email(token,user.email,user.user_name)
+        # Redirect to the main login form here with a "password reset email sent!"
+    else:
+        for field, errs in form.errors.items():
+            flash(f"{field}: {errs[0]}",'danger')
+    return render_template('reset.html', form=form)
+#define send email func 
+def send_email(token,email,name):
+    domain_name = 'sandboxae05f1ada35142198d4234a824ae31a9.mailgun.org'
+    url = f"https://api.mailgun.net/v3/{domain_name}/messages"
+    try: 
+        reponse = requests.post(
+            url,
+            auth=("api", app.config['API_KEY']),
+            data={"from": "ADMIN - Ticket box <thanhhuy0611@gmail.com>",
+                "to": [email, "thanhhuy0611@gmail.com"],
+                "subject": "TICKET BOX-FORGET PASSWORD",
+                "html": render_template('email_recover.html',token = token)}
+        )
+        print(reponse)
+        response.raise_for_status()
+    except HTTPError as http_err:
+        print(f'HTTP error occurred: {http_err}') 
+    except Exception as err:
+        print(f'Other error occurred: {err}')  
+    else:
+        print('Success!')
 
 
+## set new password
+@user_blueprint.route('/new_password/<token>',methods = ['GET','POST'])
+def new_password(token):
+    form = PasswordForm()
+    print('token',token)
+    ts = URLSafeTimedSerializer(app.config["SECRET_KEY"])
+    email = ts.loads(token,salt='recover-password-secret', max_age = 600)
+    user = Users.query.filter_by(email = email).first()
+    if not user:
+        flash('INVALID TOKEN, PLEASE TRY AGAIN','danger')
+    else:
+        
+        if request.method == "POST":    
+            if form.validate_on_submit():
+                user.set_password(form.password.data)
+                login_user(user)
+                return redirect(url_for('home'))
+            else:
+                for field,error in form.errors.items():
+                    flash(f'{field}: {error[0]}','danger')
+    return render_template('new_password.html',form = form)
