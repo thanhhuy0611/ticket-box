@@ -1,5 +1,4 @@
 {% extends './base.html' %}
-
 {% block content %}
 {% with messages = get_flashed_messages(with_categories=true) %}
 <!-- Categories: success (green), info (blue), warning (yellow), danger (red) -->
@@ -13,11 +12,18 @@
 {% endfor %}
 {% endif %}
 {% endwith %}
-<div class="container">
-  {% if not current_user.is_anonymous %}
-  {% include './views/newpost.html' %}
-  {% endif %}
-  {% include './views/listposts.html' %}
-</div>
 
+<div class="jumbotron">
+    <h1 class="display-4">{{event.name}}</h1>
+    <hr class="my-4">
+    <div style="height: 40vh;background-repeat: no-repeat;background-size: 100%;
+    background-image:url({{event.banner_url}})"></div>
+    <hr class="my-4">
+    <p>{{event.contain}}</p>
+    <p class="lead">
+      <a class="btn btn-primary btn-lg" href="{{url_for('event.view', id= event.id)}}" role="button">See more</a>
+    </p>
+    <small>Location: {{event.location}}</small>
+    <small>Create at: {{event.created_on}}</small>
+</div>
 {% endblock %}

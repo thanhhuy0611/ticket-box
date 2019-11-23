@@ -3,22 +3,21 @@ from flask_login import UserMixin, LoginManager, current_user, login_user, logou
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_wtf import FlaskForm
 from flask_migrate import Migrate
-from wtforms import StringField, validators, PasswordField, SubmitField
+from wtforms import StringField, validators, PasswordField, SubmitField,SelectField
 from itsdangerous import URLSafeTimedSerializer
 import requests
 from requests.exceptions import HTTPError
 
+    
+###import model
+# from src.models.user import Users, Blog, Comment
+# from src import app
 
-
-##import model
-from src.models.user import Users, Blog, Comment
-from src import app
-
-##import database
-from src import db
+##import __init__.src (app,db,model,..)
+from src import *
 
 ## define blue print (class = (url_prefix, route to view))
-user_blueprint = Blueprint('user', __name__, template_folder='../../templates')
+user_blueprint = Blueprint('user', __name__, template_folder='../../templates/user')
 
 
 ## Create form validation class
@@ -40,11 +39,16 @@ class PasswordForm(FlaskForm):
     submit = SubmitField('Change password')
 
 class RegisterForm(FlaskForm):
-    username = StringField(
+    user_name = StringField(
         "User name", validators=[
             validators.DataRequired(), 
             validators.Length(min=3,max=20,message="Need to be in between 3 and 20")
     ])
+    user_type = SelectField(
+        "You are guest or organiser", 
+        validators=[validators.DataRequired()],
+        choices=[('org', 'Organiser'), ('gue', 'Guest')]
+    )
     email = StringField(
         "Email", validators=[
             validators.DataRequired(), 
@@ -58,54 +62,6 @@ class RegisterForm(FlaskForm):
     ])
     confirm = PasswordField('Confirm password', validators=[validators.DataRequired()])
     submit = SubmitField('Sign up')
-
-# comment
-@user_blueprint.route('/<id>/comments', methods=['GET','POST'])
-def create_comment(id):
-    ref = request.args.get('ref')
-    print(ref)
-    if request.method == "POST":
-        comment = Comment(
-            body = request.form["body"],
-            user_id = current_user.id,
-            blog_id = id
-        )
-    db.session.add(comment)
-    db.session.commit()
-    return redirect(url_for(ref, id= id))
-
-# delete comment
-@user_blueprint.route('/<id>/comments/<id_comment>', methods=['GET','POST'])
-@login_required
-def delete_comment(id,id_comment):
-    ref = request.args.get('ref')
-    print('ref',ref)
-    comment = Comment.query.filter_by(id = id_comment).first()
-    db.session.delete(comment)
-    db.session.commit()
-    return redirect(url_for(ref, id= id))
-
-
-#view a blog
-@user_blueprint.route('/<id>',methods=["GET","POST"])
-def view_post(id):
-    post = Blog.query.get(id)
-    post.view_count +=1
-    db.session.commit() 
-    post.comments = Comment.query.filter_by(blog_id = id).all()
-    return render_template('/post.html',post = post, ref = 'user.view_post')
-
-#Edit a blog
-@user_blueprint.route('/<id>/edit',methods=['GET','POST'])
-@login_required
-def edit_post(id):
-    post = Blog.query.get(id)
-    if request.method == "POST":
-        post.title = request.form['title']
-        post.body = request.form['body']
-        db.session.commit()
-        return redirect(url_for('user.view_post',id = id))
-    return render_template('/editpost.html',post = post)
 
 ## reset password
 @user_blueprint.route('/reset',methods=["GET","POST"])
@@ -168,3 +124,63 @@ def new_password(token):
                 for field,error in form.errors.items():
                     flash(f'{field}: {error[0]}','danger')
     return render_template('new_password.html',form = form)
+
+## dashboard root/user/<id>
+@user_blueprint.route('/<id>',methods=["GET","POST"])
+@login_required
+def dashboard(id):
+    user = Users.query.get(id)
+    events =  Event.query.filter_by(user_id = id).order_by(Event.created_on.desc()).all()
+    return render_template('user/dashboard.html',events = events)
+
+
+
+###########____EVENT___#################
+# comment------------------------------------------
+@user_blueprint.route('/<id>/comments', methods=['GET','POST'])
+def create_comment(id):
+    ref = request.args.get('ref')
+    print(ref)
+    if request.method == "POST":
+        comment = Comment(
+            body = request.form["body"],
+            user_id = current_user.id,
+            blog_id = id
+        )
+    db.session.add(comment)
+    db.session.commit()
+    return redirect(url_for(ref, id= id))
+
+# delete comment
+@user_blueprint.route('/<id>/comments/<id_comment>', methods=['GET','POST'])
+@login_required
+def delete_comment(id,id_comment):
+    ref = request.args.get('ref')
+    print('ref',ref)
+    comment = Comment.query.filter_by(id = id_comment).first()
+    db.session.delete(comment)
+    db.session.commit()
+    return redirect(url_for(ref, id= id))
+
+
+#view a blog
+@user_blueprint.route('/<id>',methods=["GET","POST"])
+def view_post(id):
+    post = Blog.query.get(id)
+    post.view_count +=1
+    db.session.commit() 
+    post.comments = Comment.query.filter_by(blog_id = id).all()
+    return render_template('/post.html',post = post, ref = 'user.view_post')
+
+#Edit a blog
+@user_blueprint.route('/<id>/edit',methods=['GET','POST'])
+@login_required
+def edit_post(id):
+    post = Blog.query.get(id)
+    if request.method == "POST":
+        post.title = request.form['title']
+        post.body = request.form['body']
+        db.session.commit()
+        return redirect(url_for('user.view_post',id = id))
+    return render_template('/editpost.html',post = post)
+##-----###################################################

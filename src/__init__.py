@@ -16,6 +16,9 @@ db = SQLAlchemy(app)
 #-------------------------------------------------
 ##  import models
 from src.models.user import Users, Blog, Comment
+from src.models.event import *
+
+#import class WTForm
 from src.components.user import *
 
 migrate = Migrate(app, db)
@@ -32,24 +35,26 @@ def load_user(id):
 ## import controlers file
 from src.components.user import user_blueprint
 app.register_blueprint(user_blueprint, url_prefix='/user')
+from src.components.event import event_blueprint
+app.register_blueprint(event_blueprint, url_prefix='/event')
 
 # set current_user
 @login_manager.user_loader
 def load_user(b):
     return Users.query.filter_by(id = b).first()
 
-# show all blog
+# show all event
 @app.route('/',methods=["GET","POST"])
 def home():
-    posts = Blog.query.all()
+    events = Event.query.all()
     filter = request.args.get('filter')
-    for post in posts:
-        post.comments = Comment.query.filter_by(blog_id = post.id).all()
+    # for event in events:
+    #     post.comments = Comment.query.filter_by(blog_id = post.id).all()
     if filter == 'most-recently':
-        posts = Blog.query.order_by(Blog.created_on.desc()).all()
-    if filter == 'top-viewed':
-        posts = Blog.query.order_by(Blog.view_count.desc()).all()
-    return render_template('/index.html',posts = posts, ref = 'home')
+        events = Event.query.order_by(Event.created_on.desc()).all()
+    # if filter == 'top-viewed':
+    #     posts = Blog.query.order_by(Blog.view_count.desc()).all()
+    return render_template('root/index.html',events = events, ref = 'home')
 
 # sign up account
 @app.route('/signup', methods=["GET","POST"])
@@ -65,9 +70,11 @@ def sign_up():
             if is_email_exits:
                 flash('Email is exits. Please try again!','danger')
             if not is_email_exits:
+                print(form.user_type.data)
                 new_user =  Users(
                     email = form.email.data,        
-                    user_name = form.username.data
+                    user_name = form.user_name.data,
+                    user_type = form.user_type.data
                 )
                 new_user.set_password(form.password.data)
                 db.session.add(new_user)
@@ -77,8 +84,37 @@ def sign_up():
         else:
             for field,error in form.errors.items():
                 flash(f'{field}: {error[0]}','danger')
-    return render_template('/signup.html', form = form)
+    return render_template('root/signup.html', form = form)
 
+# check account login
+@app.route('/login', methods=["GET","POST"])
+def login():
+    if not current_user.is_anonymous:
+        return redirect(url_for('home'))
+
+    if request.method == "POST":
+        user = Users.query.filter_by(email = request.form["email"]).first()
+        if not user:
+            flash('Email incorrect!','danger')
+        if user:
+            if user.check_password(request.form['password']):
+                login_user(user)
+                return redirect(url_for('user.dashboard',id = current_user.id))
+            else:
+                flash('Password incorrect!','danger')
+    return render_template('root/login.html')
+
+# logout 
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
+
+
+
+
+#-----------------IGNORE------------------##
 
 # add new blog
 @app.route('/newpost',methods=["GET","POST"])
@@ -105,30 +141,3 @@ def delete_blog(b):
         db.session.delete(post)
         db.session.commit()
         return redirect(url_for('home'))
-
-
-# check account login
-@app.route('/login', methods=["GET","POST"])
-def login():
-    if not current_user.is_anonymous:
-        return redirect(url_for('home'))
-
-    if request.method == "POST":
-        user = Users.query.filter_by(email = request.form["email"]).first()
-        if not user:
-            flash('Email incorrect!','danger')
-        if user:
-            if user.check_password(request.form['password']):
-                login_user(user)
-                return redirect(url_for('home'))
-            else:
-                flash('Password incorrect!','danger')
-    return render_template('/login.html')
-
-# logout 
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for('login'))
-
