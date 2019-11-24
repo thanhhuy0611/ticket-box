@@ -7,7 +7,7 @@ load_dotenv()
 
 class Config(object):
   DEBUG=True
-  SQLALCHEMY_DATABASE_URI=os.environ.get('DATABASE_POSTGRES')
+  SQLALCHEMY_DATABASE_URI=os.environ.get('DATABASE_URL')
   SECRET_KEY='supersecret'
   FLASK_ADMIN_SWATCH = 'cerulean'
   SQLALCHEMY_TRACK_MODIFICATIONS = False
