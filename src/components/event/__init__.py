@@ -18,20 +18,12 @@ def create():
       banner_url = request.form['banner_url'],
       location = request.form['location'],
       user_id = current_user.id,
-      rating_id = 1,
-      ticket_id = 2,
     )
     db.session.add(new_event)
     db.session.commit()
     return redirect(url_for('user.dashboard',id = current_user.id))
   return render_template('/event/create.html')
 
-## 'root/event/view/<id>'
-@event_blueprint.route('/view/<id>',methods = ['GET','POST'])
-@login_required
-def view(id):
-  event = Event.query.get(id)
-  return render_template('/event/view.html', event = event)
 
 ## delete event
 @event_blueprint.route('/delete/<id>',methods = ['GET','POST'])
@@ -60,3 +52,30 @@ def edit(id):
         db.session.commit()
         return redirect(url_for('event.view',id = id))
     return render_template('event/edit.html',event = event)
+
+## 'root/event/view/<id>'
+@event_blueprint.route('/view/<id>',methods = ['GET','POST'])
+@login_required
+def view(id):
+  event = Event.query.get(id)
+  event.ratings = Rating.query.filter_by(event_id = id).all()
+  for rating in event.ratings:
+      rating.user =  Users.query.get(rating.user_id)
+  return render_template('/event/view.html', event = event)
+
+
+##Rating
+@event_blueprint.route('/<id>/rating', methods=['GET','POST'])
+@login_required
+def rating(id):
+    if request.method == "POST":
+        rating = Rating(
+            body = request.form["body"],
+            stars = 5, ## how to get value form view.html from
+            user_id = current_user.id,
+            event_id = id
+        )
+    print(rating.stars,'star')
+    db.session.add(rating)
+    db.session.commit()
+    return redirect(url_for('event.view',id = id))

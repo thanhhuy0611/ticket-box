@@ -48,8 +48,6 @@ def load_user(b):
 def home():
     events = Event.query.all()
     filter = request.args.get('filter')
-    # for event in events:
-    #     post.comments = Comment.query.filter_by(blog_id = post.id).all()
     if filter == 'most-recently':
         events = Event.query.order_by(Event.created_on.desc()).all()
     # if filter == 'top-viewed':

@@ -6,29 +6,33 @@
 <h3><a href="{{url_for('event.create')}}">Create new event</a></h3>
 <h3>My event:</h3>
 <div class="container">
-    {% for event in events %}
-    <div class="jumbotron">
-        <h1 class="display-4">{{event.name}}</h1>
-        <hr class="my-4">
-        <div style="height: 40vh;background-repeat: no-repeat;background-size: 100%;
-        background-image:url({{event.banner_url}})"></div>
-        <hr class="my-4">
-        <p>{{event.contain}}</p>
-        <div style="display: flex; flex-direction: row">
-          <p class="lead mr-4">
-            <a class="btn btn-primary btn-lg" href="{{url_for('event.view', id= event.id)}}" role="button">See more</a>
-          </p>
-          <p class="lead mr-4">
-            <a class="btn btn-success btn-lg" href="{{url_for('event.edit', id= event.id)}}" role="button">Edit</a>
-          </p>
-          <p class="lead mr-4">
-            <a class="btn btn-danger btn-lg" href="{{url_for('event.delete', id= event.id)}}" role="button">Delete</a>
-          </p>
-        </div>
-        <small>Location: {{event.location}}</small>
-        <small>Create at: {{event.created_on}}</small>
-    </div>
-    {% endfor %}
+    {% if events: %}
+      {% for event in events %}
+      <div class="jumbotron">
+          <h1 class="display-4">{{event.name}}</h1>
+          <hr class="my-4">
+          <div style="height: 40vh;background-repeat: no-repeat;background-size: 100%;
+          background-image:url({{event.banner_url}})"></div>
+          <hr class="my-4">
+          <p>{{event.contain}}</p>
+          <div style="display: flex; flex-direction: row">
+            <p class="lead mr-4">
+              <a class="btn btn-primary btn-lg" href="{{url_for('event.view', id= event.id)}}" role="button">See more</a>
+            </p>
+            <p class="lead mr-4">
+              <a class="btn btn-success btn-lg" href="{{url_for('event.edit', id= event.id)}}" role="button">Edit</a>
+            </p>
+            <p class="lead mr-4">
+              <a class="btn btn-danger btn-lg" href="{{url_for('event.delete', id= event.id)}}" role="button">Delete</a>
+            </p>
+          </div>
+          <small>Location: {{event.location}}</small>
+          <small>Create at: {{event.created_on}}</small>
+      </div>
+      {% endfor %}
+    {% else:%}
+      <h5>You have not any event yet.</h5>
+    {%endif%}
 </div>
 {% else: %}
 <h1>This is page of guess</h1>

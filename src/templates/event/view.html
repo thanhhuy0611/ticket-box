@@ -14,16 +14,41 @@
 {% endwith %}
 
 <div class="jumbotron">
-    <h1 class="display-4">{{event.name}}</h1>
-    <hr class="my-4">
-    <div style="height: 40vh;background-repeat: no-repeat;background-size: 100%;
+  <h1 class="display-4">{{event.name}}</h1>
+  <hr class="my-4">
+  <div style="height: 40vh;background-repeat: no-repeat;background-size: 100%;
     background-image:url({{event.banner_url}})"></div>
-    <hr class="my-4">
-    <p>{{event.contain}}</p>
-    <p class="lead">
-      <a class="btn btn-primary btn-lg" href="{{url_for('event.view', id= event.id)}}" role="button">See more</a>
-    </p>
-    <small>Location: {{event.location}}</small>
-    <small>Create at: {{event.created_on}}</small>
+  <hr class="my-4">
+  <p>{{event.contain}}</p>
+  <p class="lead">
+    <a class="btn btn-success btn-lg" href="{{url_for('event.view', id= event.id)}}" role="button">Get ticket</a>
+  </p>
+  <small>Location: {{event.location}}</small>
+  <small>Create at: {{event.created_on}}</small>
+
+  {% for rating in event.ratings %}
+  <p>
+    <a href="/">
+      {{rating.user.user_name}} </a>
+    {{ rating.stars }} star - {{ rating.body }} <small> - at {{rating.created_on}}</small>
+
+  </p>
+
+  {% endfor %}
+
+  <form class="input-group mb-3" method="POST" action="{{url_for('event.rating', id = event.id, ref=ref)}}">
+    <input name="body" type="text" class="form-control" placeholder="Share your feedback here"
+      aria-label="Recipient's username" aria-describedby="button-addon2">
+    <div class="input-group-append">
+      <select name="stars" class="btn btn-outline-secondary">
+        <option value="5">5* - Wonderful!</option>
+        <option value="4">4* - Good!</option>
+        <option value="3">3* - stars: Not special</option>
+        <option value="2">2* - Bad</option>
+        <option value="1">1* - Terrible</option>
+      </select>
+      <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Rating</button>
+    </div>
+  </form>
 </div>
 {% endblock %}

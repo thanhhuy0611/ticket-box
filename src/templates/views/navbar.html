@@ -1,5 +1,5 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="{{url_for('home')}}">Fakebook</a>
+    <a class="navbar-brand" href="{{url_for('home')}}">TicketBox</a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
         aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -22,7 +22,7 @@
                 </a>
                 <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                     <a class="dropdown-item" href="{{url_for('user.dashboard',id = current_user.id)}}">My account</a>
-                    <a class="dropdown-item" href="#">Another action</a>
+                    <!-- <a class="dropdown-item" href="#">Another action</a> -->
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="/logout">Logout</a>
                 </div>
