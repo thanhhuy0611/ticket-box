@@ -37,6 +37,8 @@ from src.components.user import user_blueprint
 app.register_blueprint(user_blueprint, url_prefix='/user')
 from src.components.event import event_blueprint
 app.register_blueprint(event_blueprint, url_prefix='/event')
+from src.components.ticket import ticket_blueprint
+app.register_blueprint(ticket_blueprint, url_prefix='/ticket')
 
 # set current_user
 @login_manager.user_loader
@@ -79,9 +81,8 @@ def sign_up():
                 db.session.commit()
                 login_user(new_user)
                 return redirect(url_for('home'))
-        else:
-            for field,error in form.errors.items():
-                flash(f'{field}: {error[0]}','danger')
+            # for field,error in form.errors.items():
+                # flash(f'{field}: {error[0]}','danger')
     return render_template('root/signup.html', form = form)
 
 # check account login
